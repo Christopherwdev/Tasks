@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Monitor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                    }
+                }
+            },
+            darkMode: 'class'
+        }
+    </script>
+    <style>
+        .task-content {
+            min-height: 200px;
+            resize: none;
+            height: calc(100% - 40px);
+        }
+        
+        @media (max-width: 768px) {
+            .task-content {
+                min-height: 150px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
+    <!-- Dark mode detection -->
+    <script>
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+    </script>
+
+    <div class="container mx-auto p-4">
+        <h1 class="text-2xl font-bold mb-6 text-center text-primary">Task Monitor</h1>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Task sections will be created dynamically -->
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const taskGrid = document.querySelector('.grid');
+            const taskCount = 4;
+            let tasks = [];
+
+            // Load tasks from localStorage or initialize with defaults
+            function loadTasks() {
+                const savedTasks = localStorage.getItem('taskMonitorData');
+                if (savedTasks) {
+                    tasks = JSON.parse(savedTasks);
+                } else {
+                    // Initialize with default tasks
+                    tasks = Array.from({ length: taskCount }, (_, i) => ({
+                        id: i + 1,
+                        title: `Task ${i + 1}`,
+                        content: ''
+                    }));
+                    saveTasks();
+                }
+                renderTasks();
+            }
+
+            // Save tasks to localStorage
+            function saveTasks() {
+                localStorage.setItem('taskMonitorData', JSON.stringify(tasks));
+            }
+
+            // Create and render task elements
+            function renderTasks() {
+                taskGrid.innerHTML = '';
+                
+                tasks.forEach(task => {
+                    const taskElement = document.createElement('div');
+                    taskElement.className = 'bg-gray-50 dark:bg-gray-800 rounded-lg shadow-md overflow-hidden flex flex-col h-80 md:h-96';
+                    taskElement.dataset.taskId = task.id;
+                    
+                    // Create the title bar
+                    const titleBar = document.createElement('div');
+                    titleBar.className = 'bg-primary/10 p-2 flex items-center';
+                    
+                    const titleElement = document.createElement('div');
+                    titleElement.className = 'font-medium flex-1 px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary rounded-md';
+                    titleElement.contentEditable = true;
+                    titleElement.textContent = task.title;
+                    titleElement.dataset.originalTitle = task.title;
+                    titleElement.addEventListener('blur', function() {
+                        const taskId = parseInt(this.closest('[data-task-id]').dataset.taskId);
+                        const taskIndex = tasks.findIndex(t => t.id === taskId);
+                        if (taskIndex !== -1) {
+                            tasks[taskIndex].title = this.textContent;
+                            saveTasks();
+                        }
+                    });
+                    
+                    titleBar.appendChild(titleElement);
+                    taskElement.appendChild(titleBar);
+                    
+                    // Create the content area
+                    const contentArea = document.createElement('div');
+                    contentArea.className = 'task-content p-3 overflow-auto bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary rounded-md m-2';
+                    contentArea.contentEditable = true;
+                    contentArea.innerHTML = task.content;
+                    contentArea.addEventListener('blur', function() {
+                        const taskId = parseInt(this.closest('[data-task-id]').dataset.taskId);
+                        const taskIndex = tasks.findIndex(t => t.id === taskId);
+                        if (taskIndex !== -1) {
+                            tasks[taskIndex].content = this.innerHTML;
+                            saveTasks();
+                        }
+                    });
+                    
+                    taskElement.appendChild(contentArea);
+                    taskGrid.appendChild(taskElement);
+                });
+            }
+
+            // Initialize the app
+            loadTasks();
+        });
+    </script>
+</body>
+</html>
